@@ -12,9 +12,9 @@ tL_at_z_interp = lambda z: jnp.interp(z, zs_i, tLs_i)
 z_at_tL_interp = lambda t: jnp.interp(t, tLs_i, zs_i)
 
 #simulated grid parameters
-zeta_grid = [0.0002, 0.002, 0.02] #metallicities (0.01, 0.1, 1 Zsun)
-rv_grid = [0.5, 1, 2, 4] #virial radii in pc
-ncl_grid = [2e5, 4e5, 8e5, 1.6e6] #number of particles. Stellar mass is 0.6 Msun * ncl.
+zeta_grid = jnp.array([0.0002, 0.002, 0.02]) #metallicities (0.01, 0.1, 1 Zsun)
+rv_grid = jnp.array([0.5, 1, 2, 4]) #virial radii in pc
+ncl_grid = jnp.array([2e5, 4e5, 8e5, 1.6e6]) #number of particles. Stellar mass is 0.6 Msun * ncl.
 
 def mean_log10metallicity(z):
     '''Returns the mean log10Z as a function of z
@@ -35,14 +35,16 @@ def metallicity_weights(metals, redshift, sigma_dex = 0.5, Zsun = 0.02):
     assumes metallicity bins are log-spaced
     '''
 
-    log10mean = mean_log10metallicity(redshift)
+    log10mean = mean_log10metallicity(redshift) #an array if redshift is an array
    
     x = jnp.log10(metals/Zsun) 
     x_grid = jnp.log10(zeta_grid/Zsun)
     
-    w = jnp.exp(-(x-log10mean)**2/(2*sigma_dex**2))
-    w_grid = jnp.exp(-(x_grid-log10mean)**2/(2*sigma_dex**2)) #for normalization
-    norm = jnp.sum(w_grid)
+    w = jnp.exp(-(x - log10mean)**2/(2*sigma_dex**2))
+    
+    w_grid = jnp.array([np.exp(-(xg - log10mean)**2/(2*sigma_dex**2)) for xg in x_grid]) #needs to be normalized at every redshift
+    
+    norm = jnp.sum(w_grid, axis = 0)
 
     return w/norm
 
@@ -160,7 +162,7 @@ def merger_rate_at_z(zmerge, formation_rate_at_z, tgw, cluster_weight, metal, me
     tL_merge = tL_at_z_interp(zmerge) #lookback time at merger in Gyr
     tL_form = tL_merge + tgw #lookback time at formation
     z_form = z_at_tL_interp(tL_form) #redshift at formation
-
+    
     metal_weight = metal_frac_at_z(metal, z_form, **metal_kwargs)
     
     return jnp.sum(cluster_weight * metal_weight * formation_rate_at_z(z_form, **sfr_kwargs)) #sum over all mergers
