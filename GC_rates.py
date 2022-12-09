@@ -84,7 +84,7 @@ def sfr_at_z(z, dNdV0 = 2.31e9, z_gc = 3.2, sigma_gc = 0.5, disrupted_factor = 1
     '''
     
     dNdVdt_unnorm = jnp.exp(-(z - z_gc)**2/ 2*sigma_gc**2) #dN/dVcdt(z) 
-    dNdV0_unnorm = jnp.trapz(jnp.exp(-(zs_i - z_gc)**2/ 2*sigma_gc**2), tLs_i) #integrate over lookback time 
+    dNdV0_unnorm = jnp.trapz(jnp.exp(-(zs_i - z_gc)**2/ 2*sigma_gc**2), tLs_i*1e9) #integrate over lookback time, recall that tLs_i is in Gyr
     dNdVdt_norm = dNdVdt_unnorm * dNdV0/dNdV0_unnorm
     
     return dNdVdt_norm
