@@ -34,9 +34,9 @@ def schechter_lower_int(beta, logMstar, logMlo):
     lnMstar = logMstar * jnp.log(10)
     lnMlo = logMlo * jnp.log(10)
     xlow = jnp.exp(lnMlo - lnMstar)
-    #ln_out = (beta + 1) * lnMstar + jnp.log(jax_gammainc(beta + 1, xlow)) + jax_gammaln(beta + 1) #this last term is because we don't want the normalized version
-    #return jnp.exp(ln_out)
-    return jax_gammainc(beta + 1, xlow) #unnormalized
+    ln_out = (beta + 1) * lnMstar + jnp.log(jax_gammainc(beta + 1, xlow)) + jax_gammaln(beta + 1) #this last term is because we don't want the normalized version
+    return jnp.exp(ln_out)
+    #return jax_gammainc(beta + 1, xlow) #unnormalized
 
 def mean_log10metallicity(z):
     '''Returns the mean log10Z as a function of z
@@ -112,11 +112,15 @@ def compute_missing_cluster_factor(beta = -2, logMstar0 = 6.26, logMlo = 2, logM
     
     #total_Nmerge = [integral x^(1.6+beta)exp(-x) dx] from 10^(logMlo - logMstar0) to 10^(logMhi - logMstar0) -- do this analytically
     # where x = M/Mstar0
-    total_Nmerge = jax_gammainc(2.6 + beta, 10**(logMlo - logMstar0)) - jax_gammainc(2.6 + beta, 10**(logMhi - logMstar0))
+    #total_Nmerge = jax_gammainc(2.6 + beta, 10**(logMlo - logMstar0)) - jax_gammainc(2.6 + beta, 10**(logMhi - logMstar0))
+    
+    total_Nmerge = schechter_lower_int(1.6 + beta, logMstar0, logMlo) - schechter_lower_int(1.6 + beta, logMstar0, logMhi)
     
     #sim_Nmerge is the same integral from min(x_grid) to max(x_grid)
-    xgrid = 0.6 * ncl_grid/ 10**logMstar0
-    sim_Nmerge = jax_gammainc(2.6 + beta, xgrid[0]) - jax_gammainc(2.6 + beta, xgrid[-1])
+    #xgrid = 0.6 * ncl_grid/ 10**logMstar0
+    xgrid = 0.6 * ncl_grid
+    #sim_Nmerge = jax_gammainc(2.6 + beta, xgrid[0]) - jax_gammainc(2.6 + beta, xgrid[-1])
+    sim_Nmerge = jnp.sum(xgrid**(beta + 2.6) * jnp.exp(-xgrid/10**logMstar0) * (jnp.log(xgrid[1]) - jnp.log(xgrid[0])))
     
     missing_cluster_factor = total_Nmerge/sim_Nmerge
     #this should be on order ~2 for a power law slope of -2, but higher for a less steep power law slope
@@ -166,11 +170,14 @@ def cluster_number_density_from_mass_density(rho_GC = 7.3e14, beta = -2, logMsta
     logMc = logMstar0 - jnp.log10(2) #log(Mstar0/2)
     
     logm_grid = jnp.logspace(logMlo, logMhi, 20)
+    #logm_grid = ncl_grid * 0.6
     
     phi_cl = (logm_grid + (10**logDelta))**beta * jnp.exp(-(logm_grid+10**logDelta)/ 10**logMc)
     
     #number density = rho/<M> where <M> is average cluster mass \int M p(M) dM 
     average_mass = jnp.trapz(phi_cl * logm_grid, logm_grid)/ jnp.trapz(phi_cl, logm_grid)
+    
+    #average_mass = jnp.sum(phi_cl * logm_grid)/jnp.sum(phi_cl)
     
     return rho_GC/ average_mass 
                              
