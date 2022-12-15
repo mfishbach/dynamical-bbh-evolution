@@ -183,7 +183,7 @@ def radius_weights(cluster_radius, mu_rv = 1, sigma_rv = 1.5):
     returns: fractional contribution from the given cluster radius
     '''
     w = jnp.exp(-(cluster_radius - mu_rv) ** 2. / (2. * sigma_rv ** 2.)) * cluster_radius #must take into account that cluster radius is log-spaced
-    w_grid = jnp.exp(-(rv_grid - mu_rv) ** 2. / (2. * rv_grid ** 2.)) * rv_grid
+    w_grid = jnp.exp(-(rv_grid - mu_rv) ** 2. / (2. * sigma_rv ** 2.)) * rv_grid
     
     return w/jnp.sum(w_grid)
 
