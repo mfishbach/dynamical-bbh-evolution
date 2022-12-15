@@ -115,7 +115,7 @@ def compute_missing_cluster_factor(beta = -2, logMstar0 = 6.26, logMlo = 2, logM
     total_Nmerge = jax_gammainc(2.6 + beta, 10**(logMlo - logMstar0)) - jax_gammainc(2.6 + beta, 10**(logMhi - logMstar0))
     
     #sim_Nmerge is the same integral from min(x_grid) to max(x_grid)
-    x_grid = 0.6 * ncl_grid/ 10**logMstar0
+    xgrid = 0.6 * ncl_grid/ 10**logMstar0
     sim_Nmerge = jax_gammainc(2.6 + beta, xgrid[0]) - jax_gammainc(2.6 + beta, xgrid[-1])
     
     missing_cluster_factor = total_Nmerge/sim_Nmerge
