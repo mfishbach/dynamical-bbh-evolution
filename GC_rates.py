@@ -345,7 +345,7 @@ def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.3
     
     return out
 
-def merger_rate_at_z_pop_selfconsistentfactors(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, sigma_dex = 0.5, Zsun = 0.02, mu_rv = 1, sigma_rv = 1.5, beta = -2, logMstar0 = 6.26, rho_GC = 7.3e14, logDelta = 5.33, logMlo = 2, logMhi = 8):
+def merger_rate_at_z_pop_selfconsistentfactors(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, sigma_dex = 0.5, Zsun = 0.02, mu_rv = 1, sigma_rv = 1.5, beta = -2, logMstar0 = 6.26, rho_GC = 7.3e14, logDelta = 5.33, logMlo = 2, logMhi = 8, average_M_evolved = None):
     '''
     data: output of read_data() -- list of numsim, rvv, zb, ncll, tgw
     zmerge: merger redshift
@@ -362,9 +362,13 @@ def merger_rate_at_z_pop_selfconsistentfactors(data, zmerge, z_gc = 4.5, a = 2.5
     logDelta: log10 mass (Msun) lost by GCs between formation and today (excluding stellar mass loss)
     logMlo: log10 minimum GC mass (Msun)
     logMhi: log10 maximum GC mass (Msun)
+    average_M_evolved: average GC mass of evolved clusters (Msun) used to compute number density dNdV0 from rho_GC. If None, then average evolved mass is computed from other parameters assuming model of Antonini & Gieles 2020. Typical value is 3e5. 
     '''
     
-    dNdV0 = cluster_number_density_from_mass_density(rho_GC, beta, logMstar0, logMlo, logMhi, logDelta)
+    if average_M_evolved:
+        dNdV0 = rho_GC/ average_M_evolved
+    else:
+        dNdV0 = cluster_number_density_from_mass_density(rho_GC, beta, logMstar0, logMlo, logMhi, logDelta)
     
     f_missing_cluster = compute_missing_cluster_factor(beta, logMstar0, logMlo, logMhi)
     
