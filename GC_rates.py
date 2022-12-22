@@ -64,7 +64,7 @@ def metallicity_weights(metals, redshift, sigma_dex = 0.5, Zsun = 0.02):
     
     w = jnp.exp(-(x - log10mean)**2/(2*sigma_dex**2))
     
-    w_grid = jnp.array([np.exp(-(xg - log10mean)**2/(2*sigma_dex**2)) for xg in x_grid]) #needs to be normalized at every redshift
+    w_grid = jnp.array([jnp.exp(-(xg - log10mean)**2/(2*sigma_dex**2)) for xg in x_grid]) #needs to be normalized at every redshift
     
     norm = jnp.sum(w_grid, axis = 0)
 
