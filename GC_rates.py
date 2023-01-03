@@ -313,7 +313,7 @@ def merger_rate_at_z(zmerge, formation_rate_at_z, tgw, cluster_weight, metal, me
     
     return jnp.sum(cluster_weight * metal_weight * formation_rate_at_z(z_form, **sfr_kwargs)) #sum over all mergers
 
-def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.31e9, f_missing_cluster = 2, f_disrupted_cluster = 3.5, sigma_dex = 0.5, Zsun = 0.02, mu_rv = 1, sigma_rv = 1.5, beta = -2, logMstar0 = 6.26):
+def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.31e9, f_disrupted_cluster = 3.5, sigma_dex = 0.5, Zsun = 0.02, mu_rv = 1, sigma_rv = 1.5, beta = -2, logMstar0 = 6.26, logMlo = 2, logMhi = 8):
     '''
     data: output of read_data() -- list of numsim, rvv, zb, ncll, tgw
     zmerge: merger redshift
@@ -321,14 +321,15 @@ def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.3
     a: formation rate follows (1 + z)^a at low z
     b: formation rate follows (1 + z)^-b at high z
     dNdV0: number density of GCs today in units Gpc^-3
-    f_missing_cluster: contribution to merger rate from clusters not simulated 
-    f_disrupted_cluster: contribution to merger rate from cluster mass lost between formation and today
+    f_disrupted_cluster: contribution to formation rate at each z from cluster mass lost between formation and today
     sigma_dex: scatter in metallicity-redshift relation
     Zsun: solar metallicity
     mu_rv: mean cluster radius (pc)
     sigma_rv: standard deviation of cluster radius distripution (pc)
     beta: power law slope of birth cluster mass distribution
     logMstar0: log10 Schechter mass of birth cluster mass distribution
+    logMlo: log10 minimum GC mass (Msun)
+    logMhi: log10 maximum GC mass (Msun)
     '''
 
     numsim, rvv, zb, ncll, tgw = data[0], data[1], data[2], data[3], data[4]
@@ -336,6 +337,8 @@ def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.3
     #compute mass and radius weights for each simulation based on ncl, rv. 
     mweights = mass_weights_schechter(ncll*0.6, beta, logMstar0)
     rweights = radius_weights(rvv, mu_rv, sigma_rv)
+    
+    f_missing_cluster = compute_missing_cluster_factor(beta, logMstar0, logMlo, logMhi)
     
     cluster_weight = mweights * rweights * dNdV0 * f_missing_cluster * f_disrupted_cluster
     
