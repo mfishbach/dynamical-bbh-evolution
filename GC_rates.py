@@ -313,7 +313,7 @@ def merger_rate_at_z(zmerge, formation_rate_at_z, tgw, cluster_weight, metal, me
     
     return jnp.sum(cluster_weight * metal_weight * formation_rate_at_z(z_form, **sfr_kwargs)) #sum over all mergers
 
-def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.31e9, f_disrupted_cluster = 3.5, sigma_dex = 0.5, Zsun = 0.02, mu_rv = 1, sigma_rv = 1.5, beta = -2, logMstar0 = 6.26, logMlo = 2, logMhi = 8):
+def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.31e9, logf_disrupted_cluster = 0.5, sigma_dex = 0.5, Zsun = 0.02, mu_rv = 1, sigma_rv = 1.5, beta = -2, logMstar0 = 6.26, logMlo = 2, logMhi = 8):
     '''
     data: output of read_data() -- list of numsim, rvv, zb, ncll, tgw
     zmerge: merger redshift
@@ -321,7 +321,7 @@ def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.3
     a: formation rate follows (1 + z)^a at low z
     b: formation rate follows (1 + z)^-b at high z
     dNdV0: number density of GCs today in units Gpc^-3
-    f_disrupted_cluster: contribution to formation rate at each z from cluster mass lost between formation and today
+    logf_disrupted_cluster: log10 of the contribution to formation rate at each z from cluster mass lost between formation and today
     sigma_dex: scatter in metallicity-redshift relation
     Zsun: solar metallicity
     mu_rv: mean cluster radius (pc)
@@ -340,7 +340,7 @@ def merger_rate_at_z_pop(data, zmerge, z_gc = 4.5, a = 2.5, b = 2.5, dNdV0 = 2.3
     
     f_missing_cluster = compute_missing_cluster_factor(beta, logMstar0, logMlo, logMhi)
     
-    cluster_weight = mweights * rweights * dNdV0 * f_missing_cluster * f_disrupted_cluster
+    cluster_weight = mweights * rweights * dNdV0 * f_missing_cluster * 10**logf_disrupted_cluster
     
     merger_rate_array = merger_rate_at_z(zmerge, sfr_at_z_norm, tgw, cluster_weight, zb, metallicity_weights, sfr_kwargs = {'z_gc': z_gc, 'a': a, 'b': b}, metal_kwargs = {'sigma_dex': sigma_dex, 'Zsun': Zsun})
     
