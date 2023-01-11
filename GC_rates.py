@@ -9,7 +9,9 @@ import astropy.units as u
 from astropy.cosmology import Planck15
 
 #cosmology helper functions to convert between redshift and lookback time
-zs_i = jnp.linspace(0, 20, 1000)
+#zmax is the maximum redshift of star formation 
+zmax = 20
+zs_i = jnp.linspace(0, zmax, 1000)
 tLs_i = Planck15.lookback_time(zs_i).to(u.Gyr).value
 tL_at_z_interp = lambda z: jnp.interp(z, zs_i, tLs_i)
 z_at_tL_interp = lambda t: jnp.interp(t, tLs_i, zs_i)
@@ -49,7 +51,7 @@ def mean_log10metallicity(z):
 
 def metallicity_weights(metals, redshift, sigma_dex = 0.5, Zsun = 0.02):
     '''
-    metals_Zsun: metallicity in units of solar metallicity
+    metals: metallicity
     redshift: formation redshift
     sigma_dex: scatter in log10Z
     Returns fraction of star formation in a given metallicity bin at a given redshift
@@ -187,7 +189,7 @@ def radius_weights(cluster_radius, mu_rv = 1, sigma_rv = 1.5):
     cluster_radius: virial radius of given cluster (pc)
     mu_rv: mean radius (pc)
     sigma_rv: standard deviation (pc)
-    returns: fractional contribution from the given cluster radius
+    returns: fractional contribution from the given cluster radius (normalized so that the sum over the radius grid is unity)
     '''
     w = jnp.exp(-(cluster_radius - mu_rv) ** 2. / (2. * sigma_rv ** 2.)) * cluster_radius #must take into account that cluster radius is log-spaced
     w_grid = jnp.exp(-(rv_grid - mu_rv) ** 2. / (2. * sigma_rv ** 2.)) * rv_grid
