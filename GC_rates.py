@@ -116,9 +116,13 @@ def compute_missing_cluster_factor(beta = -2, logMstar0 = 6.26, logMlo = 2, logM
     # where x = M/Mstar0
     #total_Nmerge = jax_gammainc(2.6 + beta, 10**(logMlo - logMstar0)) - jax_gammainc(2.6 + beta, 10**(logMhi - logMstar0))
     
-    total_Nmerge = schechter_lower_int(1.6 + beta, logMstar0, logMlo) - schechter_lower_int(1.6 + beta, logMstar0, logMhi)
+    #total_Nmerge = schechter_lower_int(1.6 + beta, logMstar0, logMlo) - schechter_lower_int(1.6 + beta, logMstar0, logMhi) 
+    #NOTE: this only converges if beta > -2.6!!!
     
-    #sim_Nmerge is the same integral from min(x_grid) to max(x_grid)
+    #instead changed to:
+    logm_grid = jnp.logspace(logMlo, logMhi, 20) #log spaced bins between 100 and 10^8 Msun, checked this gives good agreement with analytic calculation!
+    total_Nmerge = jnp.sum(logm_grid**(beta + 2.6) * jnp.exp(-logm_grid/10**logMstar0) * (jnp.log(logm_grid[1]) - jnp.log(logm_grid[0])))
+    
     #xgrid = 0.6 * ncl_grid/ 10**logMstar0
     xgrid = 0.6 * ncl_grid
     #sim_Nmerge = jax_gammainc(2.6 + beta, xgrid[0]) - jax_gammainc(2.6 + beta, xgrid[-1])
