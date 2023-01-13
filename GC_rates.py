@@ -76,7 +76,7 @@ def mass_weights_powerlaw(cluster_mass, beta = -2, missing_cluster_factor = 4.0)
     '''
     assume cluster mass distribution is a power law with slope beta
     note that Kremer+ 2020 assumes it is lognormal with mean log10M = 5.54 (approximately center of simulated range) and width sigma(log10M) = 0.52
-    missing_cluster_factor: contribution from the clusters too big to model directly. Kremer+ 2020 find that this gives a factor of 4 regardless of radius distribution (but probably this also affects t_gw)? 
+    missing_cluster_factor: contribution from the clusters too big to model directly. Kremer+ 2020 find that this gives a factor of 4 regardless of radius distribution, but they assume a mass distribution much more skewed to heavy systems.
     '''
     w = cluster_mass**(beta + 1) #must take into account that cluster mass is log-spaced, this is dM/dlogM 
     w_grid = (0.6*ncl_grid)**(beta + 1)
@@ -101,36 +101,29 @@ def mass_weights_schechter(cluster_mass, beta = -2, logMstar0 = 6.26):
     
     return w/norm
 
-def compute_missing_cluster_factor(beta = -2, logMstar0 = 6.26, logMlo = 2, logMhi = 8):
+def compute_missing_cluster_factor(beta = -2, logMstar0 = 6.26, logMlo = 2, logMhi = 8, res = 100):
     '''
     beta: power law slope
     logMstar0: in log10(Msun), initial Schechter mass, 2Mc from Antonini & Gieles 2020
     logMlo: in log10(Msun), minimum initial cluster mass
     logMhi: in log10(Msun), maximum initial cluster mass
-    returns: factor by which to multiply BBH merger rate to acount for cluster masses not simulated
+    returns: factor by which to multiply BBH merger rate to account for cluster masses not simulated. This corresponds to the average number of mergers over the simulated mass range, divided by the average number of mergers over the full mass range from logMlo to logMhi. Note it is usually smaller than 1!
     '''
     
     #asumption is that number of mergers as a function of cluster mass [for a fixed radius] scales as M^1.6 (from Antonini & Gieles 2020)
     
-    #total_Nmerge = [integral x^(1.6+beta)exp(-x) dx] from 10^(logMlo - logMstar0) to 10^(logMhi - logMstar0) -- do this analytically
-    # where x = M/Mstar0
-    #total_Nmerge = jax_gammainc(2.6 + beta, 10**(logMlo - logMstar0)) - jax_gammainc(2.6 + beta, 10**(logMhi - logMstar0))
+    x_grid_full = jnp.logspace(logMlo-logMstar0, logMhi-logMstar0, res) #log spaced bins between 100 and 10^8 Msun
+    w_grid_full = x_grid_full**(beta + 1) * jnp.exp(-x_grid_full) #cluster weight according to mass distribution (not normalized)
+    norm_full = jnp.sum(w_grid_full)
     
-    #total_Nmerge = schechter_lower_int(1.6 + beta, logMstar0, logMlo) - schechter_lower_int(1.6 + beta, logMstar0, logMhi) 
-    #NOTE: this only converges if beta > -2.6!!!
+    average_merge_full = jnp.sum(x_grid_full**1.6 * w_grid_full/norm_full) #weighted sum of (m/Mstar)**1.6, corresponding to average number of mergers per cluster over the full mass range 
     
-    #instead changed to:
-    logm_grid = jnp.logspace(logMlo, logMhi, 20) #log spaced bins between 100 and 10^8 Msun, checked this gives good agreement with analytic calculation!
-    total_Nmerge = jnp.sum(logm_grid**(beta + 2.6) * jnp.exp(-logm_grid/10**logMstar0) * (jnp.log(logm_grid[1]) - jnp.log(logm_grid[0])))
+    x_grid = 0.6 * ncl_grid/ 10**logMstar0
+    w_grid = x_grid**(beta + 1) * jnp.exp(-x_grid)
+    norm = jnp.sum(w_grid)
+    average_merge_sim = jnp.sum(x_grid**1.6 * w_grid/norm) #weighted sum of (m/Mstar)**1.6 in the simulated mass range, corresponding to average number of mergers per simulated cluster
     
-    #xgrid = 0.6 * ncl_grid/ 10**logMstar0
-    xgrid = 0.6 * ncl_grid
-    #sim_Nmerge = jax_gammainc(2.6 + beta, xgrid[0]) - jax_gammainc(2.6 + beta, xgrid[-1])
-    sim_Nmerge = jnp.sum(xgrid**(beta + 2.6) * jnp.exp(-xgrid/10**logMstar0) * (jnp.log(xgrid[1]) - jnp.log(xgrid[0])))
-    
-    missing_cluster_factor = total_Nmerge/sim_Nmerge
-    #this should be on order ~2 for a power law slope of -2, but higher for a less steep power law slope
-    ###
+    missing_cluster_factor = average_merge_full/average_merge_sim
     
     return missing_cluster_factor
 
