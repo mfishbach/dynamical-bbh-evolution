@@ -157,6 +157,20 @@ def compute_disrupted_cluster_factor(beta = -2, logMstar0 = 6.26, logMlo = 2, lo
     
     return K_merge
 
+def average_mass_schechter(beta = -2, logMstar0 = 6.26, logMlo = 2, logMhi = 8, res = 20):
+    
+    m_grid = jnp.logspace(logMlo, logMhi, res)
+    
+    x = m_grid / 10**logMstar0
+    
+    pdf_mass = x**(beta + 1) * jnp.exp(-x)
+    
+    pdf_mass /= jnp.trapz(pdf_mass, m_grid)
+    
+    average_mass = jnp.trapz(pdf_mass * m_grid, m_grid)
+    
+    return average_mass
+
 def cluster_number_density_from_mass_density(rho_GC = 7.3e14, beta = -2, logMstar0 = 6.26, logMlo = 2, logMhi = 8, logDelta = 5.33):
     '''
     rho_GC: mass density of GCs *today*, units Msun/ Gpc^3 (e.g. Antonini & Gieles 2020 Sec IIA)
